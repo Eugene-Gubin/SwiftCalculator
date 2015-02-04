@@ -13,6 +13,12 @@ class ViewController: UIViewController {
 
     var userIsInTheMiddleOfTypingANumber: Bool = false
     let brain = CalculatorBrain()
+    let formatter = NSNumberFormatter()
+    
+    required init(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        formatter.numberStyle = NSNumberFormatterStyle.DecimalStyle
+    }
     
     @IBAction func appendDigit(sender: UIButton) {
         let digit = sender.currentTitle!
@@ -20,6 +26,22 @@ class ViewController: UIViewController {
             display.text = display.text! + digit
         } else {
             display.text = digit
+            userIsInTheMiddleOfTypingANumber = true
+        }
+    }
+    
+    @IBAction func appendDot(sender: UIButton) {
+        let text = display.text!
+        let separator = formatter.decimalSeparator ?? "."
+        
+        if (text.rangeOfString(separator) != nil) {
+            return
+        }
+        
+        if userIsInTheMiddleOfTypingANumber {
+            display.text = text + separator
+        } else {
+            display.text = "0" + separator
             userIsInTheMiddleOfTypingANumber = true
         }
     }
@@ -48,10 +70,10 @@ class ViewController: UIViewController {
     
     var displayValue: Double {
         get {
-            return NSNumberFormatter().numberFromString(display.text!)!.doubleValue
+            return formatter.numberFromString(display.text!)!.doubleValue
         }
         set {
-            display.text = "\(newValue)"
+            display.text = formatter.stringFromNumber(NSNumber(double: newValue))
             userIsInTheMiddleOfTypingANumber = false
         }
     }
