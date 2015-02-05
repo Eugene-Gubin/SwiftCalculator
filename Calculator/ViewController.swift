@@ -10,6 +10,7 @@ import UIKit
 
 class ViewController: UIViewController {
     @IBOutlet weak var display: UILabel!
+    @IBOutlet weak var history: UILabel!
 
     var userIsInTheMiddleOfTypingANumber: Bool = false
     let brain = CalculatorBrain()
@@ -53,6 +54,7 @@ class ViewController: UIViewController {
         } else {
             displayValue = 0
         }
+        history.text = brain.history()
     }
     
     @IBAction func operate(sender: UIButton) {
@@ -66,6 +68,7 @@ class ViewController: UIViewController {
                 displayValue = 0
             }
         }
+        history.text = brain.history()
     }
     
     var displayValue: Double {

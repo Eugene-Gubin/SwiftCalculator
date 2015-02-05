@@ -95,4 +95,8 @@ class CalculatorBrain {
         
         return evaluate()
     }
+    
+    func history() -> String {
+        return " ".join(opStack.map { $0.description })
+    }
 }
