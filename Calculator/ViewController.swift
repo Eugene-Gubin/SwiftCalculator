@@ -67,6 +67,7 @@ class ViewController: UIViewController {
         if let operation = sender.currentTitle {
             if let result = brain.performOperation(operation) {
                 displayValue = result
+                display.text = display.text! + "="
             } else {
                 displayValue = 0
             }
