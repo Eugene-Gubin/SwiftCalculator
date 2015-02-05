@@ -41,11 +41,7 @@ class ViewController: UIViewController {
     
     @IBAction func enter() {
         userIsInTheMiddleOfTypingANumber = false
-        if let result = brain.pushOperand(displayValue) {
-            displayValue = result
-        } else {
-            displayValue = 0
-        }
+        displayValue = brain.pushOperand(displayValue!)
         history.text = brain.history()
     }
     
@@ -65,11 +61,9 @@ class ViewController: UIViewController {
             enter()
         }
         if let operation = sender.currentTitle {
-            if let result = brain.performOperation(operation) {
-                displayValue = result
+            displayValue = brain.performOperation(operation)
+            if displayValue != nil {
                 display.text = display.text! + "="
-            } else {
-                displayValue = 0
             }
         }
         history.text = brain.history()
@@ -81,12 +75,16 @@ class ViewController: UIViewController {
         history.text = brain.history()
     }
     
-    var displayValue: Double {
+    var displayValue: Double? {
         get {
-            return formatter.numberFromString(display.text!)!.doubleValue
+            return formatter.numberFromString(display.text!)?.doubleValue
         }
         set {
-            display.text = formatter.stringFromNumber(NSNumber(double: newValue))
+            if let nv = newValue {
+                display.text = formatter.stringFromNumber(NSNumber(double: nv))
+            } else {
+                display.text = "N/A"
+            }
             userIsInTheMiddleOfTypingANumber = false
         }
     }
