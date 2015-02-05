@@ -27,6 +27,7 @@ class CalculatorBrain {
     }
     
     private var knownOps = [String:Op]()
+    private var knownConsts = [String:Double]()
     
     private var opStack = [Op]()
 
@@ -36,7 +37,13 @@ class CalculatorBrain {
             "÷" : Op.BinaryOperation("÷", { $1 / $0 }),
             "+" : Op.BinaryOperation("+", +),
             "−" : Op.BinaryOperation("−", { $1 / $0 }),
-            "√" : Op.UnaryOperation("√", sqrt)
+            "√" : Op.UnaryOperation("√", sqrt),
+            "sin" : Op.UnaryOperation("sin", sin),
+            "cos" : Op.UnaryOperation("cos", cos)
+        ]
+        
+        knownConsts = [
+            "π": M_PI
         ]
     }
     
@@ -81,6 +88,11 @@ class CalculatorBrain {
         if let operation = knownOps[operation] {
             opStack.append(operation)
         }
+        
+        if let constant = knownConsts[operation] {
+            opStack.append(Op.Operand(constant))
+        }
+        
         return evaluate()
     }
 }
