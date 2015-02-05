@@ -99,4 +99,8 @@ class CalculatorBrain {
     func history() -> String {
         return " ".join(opStack.map { $0.description })
     }
+    
+    func clear() {
+        opStack = [Op]()
+    }
 }

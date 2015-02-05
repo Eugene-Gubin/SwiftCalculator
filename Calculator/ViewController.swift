@@ -71,6 +71,12 @@ class ViewController: UIViewController {
         history.text = brain.history()
     }
     
+    @IBAction func clean(sender: AnyObject) {
+        brain.clear()
+        displayValue = brain.evaluate() ?? 0
+        history.text = brain.history()
+    }
+    
     var displayValue: Double {
         get {
             return formatter.numberFromString(display.text!)!.doubleValue
