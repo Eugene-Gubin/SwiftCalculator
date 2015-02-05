@@ -39,7 +39,8 @@ class CalculatorBrain {
             "−" : Op.BinaryOperation("−", { $1 / $0 }),
             "√" : Op.UnaryOperation("√", sqrt),
             "sin" : Op.UnaryOperation("sin", sin),
-            "cos" : Op.UnaryOperation("cos", cos)
+            "cos" : Op.UnaryOperation("cos", cos),
+            "⁺∕₋" : Op.UnaryOperation("⁺∕₋", -)
         ]
         
         knownConsts = [

@@ -39,6 +39,24 @@ class ViewController: UIViewController {
         }
     }
     
+    @IBAction func inverseNumber(sender: UIButton) {
+        if userIsInTheMiddleOfTypingANumber {
+            if let _ = displayValue {
+                invertDisplay()
+            }
+        } else {
+            doOperation(sender.currentTitle)
+        }
+    }
+    
+    func invertDisplay() {
+        if display.text!.hasPrefix("-") {
+            display.text = dropFirst(display.text!)
+        } else {
+            display.text = "-" + display.text!
+        }
+    }
+    
     @IBAction func enter() {
         userIsInTheMiddleOfTypingANumber = false
         displayValue = brain.pushOperand(displayValue!)
@@ -60,7 +78,11 @@ class ViewController: UIViewController {
         if (userIsInTheMiddleOfTypingANumber) {
             enter()
         }
-        if let operation = sender.currentTitle {
+        doOperation(sender.currentTitle)
+    }
+    
+    func doOperation(operation: String!) {
+        if let operation = operation {
             displayValue = brain.performOperation(operation)
             if displayValue != nil {
                 display.text = display.text! + "="
