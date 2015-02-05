@@ -22,27 +22,19 @@ class ViewController: UIViewController {
     }
     
     @IBAction func appendDigit(sender: UIButton) {
-        let digit = sender.currentTitle!
-        if (userIsInTheMiddleOfTypingANumber) {
-            display.text = display.text! + digit
-        } else {
-            display.text = digit
-            userIsInTheMiddleOfTypingANumber = true
-        }
-    }
-    
-    @IBAction func appendDot(sender: UIButton) {
-        let text = display.text!
+        let isDot = sender.currentTitle! == "."
         let separator = formatter.decimalSeparator ?? "."
+        let digitOrDot = isDot ? separator : sender.currentTitle!
         
-        if (text.rangeOfString(separator) != nil) {
+        let text = display.text!
+        if (isDot && text.rangeOfString(separator) != nil) {
             return
         }
         
-        if userIsInTheMiddleOfTypingANumber {
-            display.text = text + separator
+        if (userIsInTheMiddleOfTypingANumber) {
+            display.text = text + digitOrDot
         } else {
-            display.text = "0" + separator
+            display.text = isDot ? "0" + separator : digitOrDot
             userIsInTheMiddleOfTypingANumber = true
         }
     }
