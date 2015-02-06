@@ -13,6 +13,7 @@ class CalculatorBrain: Printable {
         case Operand(Double)
         case UnaryOperation(String, Double -> Double)
         case BinaryOperation(String, (Double, Double) -> Double, Int)
+        case Variable(String)
         
         var description: String {
             switch self {
@@ -22,12 +23,16 @@ class CalculatorBrain: Printable {
                 return operation
             case .BinaryOperation(let operation, _, _):
                 return operation
+            case .Variable(let varName):
+                return varName
             }
         }
     }
     
     private var knownOps = [String:Op]()
     private var knownConsts = [String:Double]()
+    
+    var variableValues = [String:Double]()
     
     private var opStack = [Op]()
     
@@ -96,6 +101,10 @@ class CalculatorBrain: Printable {
                         return (operation(op1, op2), op2Evaluation.remainingOps)
                     }
                 }
+            case .Variable(let varName):
+                if let varValue = variableValues[varName] {
+                    return (varValue, remainingOps)
+                }
             }
         }
         
@@ -123,6 +132,9 @@ class CalculatorBrain: Printable {
                 let op2Sym = (op2Precedence < precedence) ? "(\(op2))" : op2
                 
                 return ("\(op2Sym)\(opSymbol)\(op1Sym)", op2Rems, precedence)
+                
+            case .Variable(let varName):
+                return (varName, remainingOps, highestPrecedence);
             }
         }
         
@@ -131,6 +143,11 @@ class CalculatorBrain: Printable {
     
     func pushOperand(operand: Double) -> Double? {
         opStack.append(Op.Operand(operand))
+        return evaluate()
+    }
+    
+    func pushOperand(operand: String) -> Double? {
+        opStack.append(Op.Variable(operand))
         return evaluate()
     }
     
