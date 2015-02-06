@@ -13,13 +13,14 @@ class ViewController: UIViewController {
     @IBOutlet weak var history: UILabel!
 
     var userIsInTheMiddleOfTypingANumber: Bool = false
-    let brain = CalculatorBrain()
-    let formatter = NSNumberFormatter()
     
-    required init(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        formatter.numberStyle = NSNumberFormatterStyle.DecimalStyle
-    }
+    let brain = CalculatorBrain()
+    
+    lazy var formatter: NSNumberFormatter = {
+        let fmt = NSNumberFormatter()
+        fmt.numberStyle = NSNumberFormatterStyle.DecimalStyle
+        return fmt
+    }()
     
     @IBAction func appendDigit(sender: UIButton) {
         let isDot = sender.currentTitle! == "."
@@ -45,7 +46,7 @@ class ViewController: UIViewController {
                 invertDisplay()
             }
         } else {
-            doOperation(sender.currentTitle)
+            compute(sender.currentTitle, withMethod: brain.performOperation)
         }
     }
     
@@ -74,16 +75,24 @@ class ViewController: UIViewController {
         }
     }
     
+    @IBAction func pushOperand(sender: UIButton) {
+        if (userIsInTheMiddleOfTypingANumber) {
+            enter()
+        }
+        
+        compute(sender.currentTitle, withMethod: brain.pushOperand)
+    }
+    
     @IBAction func operate(sender: UIButton) {
         if (userIsInTheMiddleOfTypingANumber) {
             enter()
         }
-        doOperation(sender.currentTitle)
+        compute(sender.currentTitle, withMethod: brain.performOperation)
     }
     
-    func doOperation(operation: String!) {
-        if let operation = operation {
-            displayValue = brain.performOperation(operation)
+    func compute(operation: String!, withMethod: (String) -> Double?) {
+        if let op = operation {
+            displayValue = withMethod(op)
             if displayValue != nil {
                 display.text = display.text! + "="
             }

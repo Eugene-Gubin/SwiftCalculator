@@ -102,8 +102,8 @@ class CalculatorBrain: Printable {
                     }
                 }
             case .Variable(let varName):
-                if let varValue = variableValues[varName] {
-                    return (varValue, remainingOps)
+                if let value = variableValues[varName] ?? knownConsts[varName] {
+                    return (value, remainingOps)
                 }
             }
         }
@@ -155,11 +155,7 @@ class CalculatorBrain: Printable {
         if let operation = knownOps[operation] {
             opStack.append(operation)
         }
-        
-        if let constant = knownConsts[operation] {
-            opStack.append(Op.Operand(constant))
-        }
-        
+         
         return evaluate()
     }
     
