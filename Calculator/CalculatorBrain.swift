@@ -8,11 +8,11 @@
 
 import Foundation
 
-class CalculatorBrain {
+class CalculatorBrain: Printable {
     private enum Op: Printable {
         case Operand(Double)
         case UnaryOperation(String, Double -> Double)
-        case BinaryOperation(String, (Double, Double) -> Double)
+        case BinaryOperation(String, (Double, Double) -> Double, Int)
         
         var description: String {
             switch self {
@@ -20,7 +20,7 @@ class CalculatorBrain {
                 return "\(operand)"
             case .UnaryOperation(let operation, _):
                 return operation
-            case .BinaryOperation(let operation, _):
+            case .BinaryOperation(let operation, _, _):
                 return operation
             }
         }
@@ -30,13 +30,35 @@ class CalculatorBrain {
     private var knownConsts = [String:Double]()
     
     private var opStack = [Op]()
+    
+    typealias PropertyList = AnyObject
+    private var program: PropertyList {
+        get {
+            return opStack.map { $0.description }
+        }
+        set {
+            if let opSymbols = newValue as? [String] {
+                var newOpStack = [Op]()
+                for opSymbol in opSymbols {
+                    if let op = knownOps[opSymbol] {
+                        newOpStack.append(op)
+                    } else if let operand = NSNumberFormatter().numberFromString(opSymbol)?.doubleValue {
+                        newOpStack.append(.Operand(operand))
+                    } else if let constant = knownConsts[opSymbol] {
+                        newOpStack.append(.Operand(constant))
+                    }
+                }
+                opStack = newOpStack
+            }
+        }
+    }
 
     init() {
         knownOps = [
-            "×" : Op.BinaryOperation("×", *),
-            "÷" : Op.BinaryOperation("÷", { $1 / $0 }),
-            "+" : Op.BinaryOperation("+", +),
-            "−" : Op.BinaryOperation("−", { $1 / $0 }),
+            "×" : Op.BinaryOperation("×", *, 3),
+            "÷" : Op.BinaryOperation("÷", { $1 / $0 }, 3),
+            "+" : Op.BinaryOperation("+", +, 1),
+            "−" : Op.BinaryOperation("−", { $1 - $0 }, 2),
             "√" : Op.UnaryOperation("√", sqrt),
             "sin" : Op.UnaryOperation("sin", sin),
             "cos" : Op.UnaryOperation("cos", cos),
@@ -66,7 +88,7 @@ class CalculatorBrain {
                 if let operand = operandEvaluation.result {
                     return (operation(operand), operandEvaluation.remainingOps)
                 }
-            case .BinaryOperation(_, let operation):
+            case .BinaryOperation(_, let operation, _):
                 let op1Evaluation = evaluate(remainingOps)
                 if let op1 = op1Evaluation.result {
                     let op2Evaluation = evaluate(op1Evaluation.remainingOps)
@@ -78,6 +100,35 @@ class CalculatorBrain {
         }
         
         return (nil, ops)
+    }
+    
+    private func evaluateSymbolically(ops: [Op]) -> (result: String?, remainingOps: [Op], precedence: Int) {
+        let highestPrecedence = Int.max
+        if !ops.isEmpty {
+            var remainingOps = ops
+            let op = remainingOps.removeLast()
+            switch op {
+            case .Operand(let operand):
+                return ("\(operand)", remainingOps, highestPrecedence);
+            case .UnaryOperation(let opSymbol, let operation):
+                let operandEvaluation = evaluateSymbolically(remainingOps)
+                if let operand = operandEvaluation.result {
+                    return (opSymbol + "(\(operand))", operandEvaluation.remainingOps, highestPrecedence)
+                }
+            case .BinaryOperation(let opSymbol, let operation, let precedence):
+                let op1Evaluation = evaluateSymbolically(remainingOps)
+                if let op1 = op1Evaluation.result {
+                    let op2Evaluation = evaluateSymbolically(op1Evaluation.remainingOps)
+                    if let op2 = op2Evaluation.result {
+                        let op1Sym = (op1Evaluation.precedence < precedence) ? "(\(op1))" : op1
+                        let op2Sym = (op2Evaluation.precedence < precedence) ? "(\(op2))" : op2
+                        return ("\(op2Sym)\(opSymbol)\(op1Sym)", op2Evaluation.remainingOps, precedence)
+                    }
+                }
+            }
+        }
+        
+        return (nil, ops, 0)
     }
     
     func pushOperand(operand: Double) -> Double? {
@@ -99,6 +150,24 @@ class CalculatorBrain {
     
     func history() -> String {
         return " ".join(opStack.map { $0.description })
+    }
+    
+    var description: String {
+        var expressions = [String]()
+        
+        var remainings = opStack
+        var expression:String? = nil
+        do {
+            let (expr, stack, _) = evaluateSymbolically(remainings)
+            expression = expr
+            remainings = stack
+            
+            if let e = expression {
+                expressions.append(e)
+            }
+        } while (!remainings.isEmpty && expression != nil)
+        
+        return ",".join(expressions)
     }
     
     func clear() {

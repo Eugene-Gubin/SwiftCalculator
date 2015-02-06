@@ -60,7 +60,7 @@ class ViewController: UIViewController {
     @IBAction func enter() {
         userIsInTheMiddleOfTypingANumber = false
         displayValue = brain.pushOperand(displayValue!)
-        history.text = brain.history()
+        history.text = brain.description
     }
     
     @IBAction func backspace(sender: AnyObject) {
@@ -88,13 +88,13 @@ class ViewController: UIViewController {
                 display.text = display.text! + "="
             }
         }
-        history.text = brain.history()
+        history.text = brain.description
     }
     
     @IBAction func clean(sender: AnyObject) {
         brain.clear()
         displayValue = brain.evaluate() ?? 0
-        history.text = brain.history()
+        history.text = brain.description
     }
     
     var displayValue: Double? {
