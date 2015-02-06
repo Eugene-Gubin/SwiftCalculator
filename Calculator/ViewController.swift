@@ -94,15 +94,13 @@ class ViewController: UIViewController {
         if let op = operation {
             displayValue = withMethod(op)
             if displayValue != nil {
-                display.text = display.text! + "="
+                history.text = brain.description + "="
             }
         }
-        history.text = brain.description
     }
     
     @IBAction func clean(sender: AnyObject) {
-        brain.clear()
-        displayValue = brain.evaluate() ?? 0
+        displayValue = brain.clear()
         history.text = brain.description
     }
     

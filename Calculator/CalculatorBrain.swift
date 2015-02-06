@@ -159,10 +159,6 @@ class CalculatorBrain: Printable {
         return evaluate()
     }
     
-    func history() -> String {
-        return " ".join(opStack.map { $0.description })
-    }
-    
     var description: String {
         if opStack.isEmpty {
             return ""
@@ -177,10 +173,11 @@ class CalculatorBrain: Printable {
             expressions.append(expression)
         } while (!remainings.isEmpty)
         
-        return ",".join(expressions)
+        return ",".join(expressions.reverse())
     }
     
-    func clear() {
+    func clear() -> Double? {
         opStack = [Op]()
+        return evaluate()
     }
 }
