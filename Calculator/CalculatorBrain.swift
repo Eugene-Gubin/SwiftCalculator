@@ -102,33 +102,31 @@ class CalculatorBrain: Printable {
         return (nil, ops)
     }
     
-    private func evaluateSymbolically(ops: [Op]) -> (result: String?, remainingOps: [Op], precedence: Int) {
+    private func evaluateSymbolically(ops: [Op]) -> (result: String, remainingOps: [Op], precedence: Int) {
         let highestPrecedence = Int.max
         if !ops.isEmpty {
             var remainingOps = ops
             let op = remainingOps.removeLast()
             switch op {
+            
             case .Operand(let operand):
                 return ("\(operand)", remainingOps, highestPrecedence);
+            
             case .UnaryOperation(let opSymbol, let operation):
                 let operandEvaluation = evaluateSymbolically(remainingOps)
-                if let operand = operandEvaluation.result {
-                    return (opSymbol + "(\(operand))", operandEvaluation.remainingOps, highestPrecedence)
-                }
+                return (opSymbol + "(\(operandEvaluation.result))", operandEvaluation.remainingOps, highestPrecedence)
+            
             case .BinaryOperation(let opSymbol, let operation, let precedence):
-                let op1Evaluation = evaluateSymbolically(remainingOps)
-                if let op1 = op1Evaluation.result {
-                    let op2Evaluation = evaluateSymbolically(op1Evaluation.remainingOps)
-                    if let op2 = op2Evaluation.result {
-                        let op1Sym = (op1Evaluation.precedence < precedence) ? "(\(op1))" : op1
-                        let op2Sym = (op2Evaluation.precedence < precedence) ? "(\(op2))" : op2
-                        return ("\(op2Sym)\(opSymbol)\(op1Sym)", op2Evaluation.remainingOps, precedence)
-                    }
-                }
+                let (op1, op1Rems, op1Precedence) = evaluateSymbolically(remainingOps)
+                let op1Sym = (op1Precedence < precedence) ? "(\(op1))" : op1
+                let (op2, op2Rems, op2Precedence) = evaluateSymbolically(op1Rems)
+                let op2Sym = (op2Precedence < precedence) ? "(\(op2))" : op2
+                
+                return ("\(op2Sym)\(opSymbol)\(op1Sym)", op2Rems, precedence)
             }
         }
         
-        return (nil, ops, 0)
+        return ("?", ops, highestPrecedence)
     }
     
     func pushOperand(operand: Double) -> Double? {
@@ -153,19 +151,18 @@ class CalculatorBrain: Printable {
     }
     
     var description: String {
+        if opStack.isEmpty {
+            return ""
+        }
+        
         var expressions = [String]()
         
         var remainings = opStack
-        var expression:String? = nil
         do {
-            let (expr, stack, _) = evaluateSymbolically(remainings)
-            expression = expr
+            let (expression, stack, _) = evaluateSymbolically(remainings)
             remainings = stack
-            
-            if let e = expression {
-                expressions.append(e)
-            }
-        } while (!remainings.isEmpty && expression != nil)
+            expressions.append(expression)
+        } while (!remainings.isEmpty)
         
         return ",".join(expressions)
     }
