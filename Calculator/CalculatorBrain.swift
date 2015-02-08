@@ -181,4 +181,9 @@ class CalculatorBrain: Printable {
         variableValues = [String:Double]()
         return evaluate()
     }
+    
+    func undo() ->Double? {
+        opStack.removeLast()
+        return evaluate()
+    }
 }

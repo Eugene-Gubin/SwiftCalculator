@@ -72,6 +72,9 @@ class ViewController: UIViewController {
                 display.text = "0"
                 userIsInTheMiddleOfTypingANumber = false
             }
+        } else {
+            displayValue = brain.undo()
+            history.text = brain.description
         }
     }
     
