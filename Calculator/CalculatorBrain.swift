@@ -9,10 +9,29 @@
 import Foundation
 
 class CalculatorBrain: Printable {
+    enum Result: Printable {
+        case Value(Double)
+        case Error(String)
+        
+        var description: String {
+            switch self {
+            case .Value(let value):
+                return "\(value)"
+            case .Error(let msg):
+                return "(\(msg))"
+            }
+        }
+    }
+
+    private typealias UnaryOperationImpl = Result -> Result
+    private typealias BinaryOperationImpl = (Result, Result) -> Result
+    private typealias UnaryFunction = Double -> Double
+    private typealias BinaryFunction = (Double, Double) -> Double
+    
     private enum Op: Printable {
         case Operand(Double)
-        case UnaryOperation(String, Double -> Double)
-        case BinaryOperation(String, (Double, Double) -> Double, Int)
+        case UnaryOperation(String, UnaryOperationImpl)
+        case BinaryOperation(String, BinaryOperationImpl, Int)
         case Variable(String)
         
         var description: String {
@@ -26,6 +45,47 @@ class CalculatorBrain: Printable {
             case .Variable(let varName):
                 return varName
             }
+        }
+    }
+    
+    private func unaryEvaluation(f: UnaryFunction, opCheck: (Double -> String?)? = nil) -> UnaryOperationImpl {
+        return {
+            if let a = self.opValid($0) {
+                if let error = opCheck?(a) {
+                    return Result.Error(error)
+                } else {
+                    return Result.Value(f(a))
+                }
+            } else {
+                return $0
+            }
+        }
+    }
+    
+    private func binaryEvaluation(f: BinaryFunction, opCheck: ((Double, Double) -> String?)? = nil) -> BinaryOperationImpl {
+        return {
+            if let a = self.opValid($0) {
+                if let b = self.opValid($1) {
+                    if let error = opCheck?(a, b) {
+                        return Result.Error(error)
+                    } else {
+                        return Result.Value(f(a, b))
+                    }
+                } else {
+                    return $1
+                }
+            } else {
+                return $0
+            }
+        }
+    }
+    
+    private func opValid(op: Result) -> Double? {
+        switch op {
+        case .Value(let value):
+            return value
+        case .Error:
+            return nil
         }
     }
     
@@ -59,15 +119,28 @@ class CalculatorBrain: Printable {
     }
 
     init() {
+        let multiply = binaryEvaluation(*)
+        let devide = binaryEvaluation({ $1 / $0 }) {
+            return ($0.0 == 0) ? "Devide: zero operand." : nil
+        }
+        let sum = binaryEvaluation(+)
+        let sub = binaryEvaluation({ $1 - $0 })
+        let sqRoot = unaryEvaluation(sqrt) {
+            return ($0 < 0) ? "Sqrt: Invalid operand" : nil
+        }
+        let sine = unaryEvaluation(sin)
+        let cosine = unaryEvaluation(cos)
+        let inverse = unaryEvaluation(-)
+        
         knownOps = [
-            "×" : Op.BinaryOperation("×", *, 3),
-            "÷" : Op.BinaryOperation("÷", { $1 / $0 }, 3),
-            "+" : Op.BinaryOperation("+", +, 1),
-            "−" : Op.BinaryOperation("−", { $1 - $0 }, 2),
-            "√" : Op.UnaryOperation("√", sqrt),
-            "sin" : Op.UnaryOperation("sin", sin),
-            "cos" : Op.UnaryOperation("cos", cos),
-            "⁺∕₋" : Op.UnaryOperation("⁺∕₋", -)
+            "×" : Op.BinaryOperation("×", multiply, 3),
+            "÷" : Op.BinaryOperation("÷", devide, 3),
+            "+" : Op.BinaryOperation("+", sum, 1),
+            "−" : Op.BinaryOperation("−", sub, 2),
+            "√" : Op.UnaryOperation("√", sqRoot),
+            "sin" : Op.UnaryOperation("sin", sine),
+            "cos" : Op.UnaryOperation("cos", cosine),
+            "⁺∕₋" : Op.UnaryOperation("⁺∕₋", inverse)
         ]
         
         knownConsts = [
@@ -78,37 +151,44 @@ class CalculatorBrain: Printable {
     func evaluate() -> Double? {
         let (result, remainder) = evaluate(opStack)
         println("\(opStack) = \(result) with \(remainder) left over")
+        return opValid(result)
+    }
+    
+    func evaluateAndReportErrors() -> Result {
+        let (result, _) = evaluate(opStack)
         return result
     }
     
-    private func evaluate(ops: [Op]) -> (result: Double?, remainingOps: [Op]) {
+    private func evaluate(ops: [Op]) -> (result: Result, remainingOps: [Op]) {
         if !ops.isEmpty {
             var remainingOps = ops
             let op = remainingOps.removeLast()
             switch op {
+            
             case .Operand(let operand):
-                return (operand, remainingOps);
+                return (Result.Value(operand), remainingOps);
+            
             case .UnaryOperation(_, let operation):
                 let operandEvaluation = evaluate(remainingOps)
-                if let operand = operandEvaluation.result {
-                    return (operation(operand), operandEvaluation.remainingOps)
-                }
+                return (operation(operandEvaluation.result), operandEvaluation.remainingOps)
+                
             case .BinaryOperation(_, let operation, _):
                 let op1Evaluation = evaluate(remainingOps)
-                if let op1 = op1Evaluation.result {
-                    let op2Evaluation = evaluate(op1Evaluation.remainingOps)
-                    if let op2 = op2Evaluation.result {
-                        return (operation(op1, op2), op2Evaluation.remainingOps)
-                    }
-                }
+                let op1 = op1Evaluation.result
+                let op2Evaluation = evaluate(op1Evaluation.remainingOps)
+                let op2 = op2Evaluation.result
+                return (operation(op1, op2), op2Evaluation.remainingOps)
+
             case .Variable(let varName):
                 if let value = variableValues[varName] ?? knownConsts[varName] {
-                    return (value, remainingOps)
+                    return (Result.Value(value), remainingOps)
+                } else {
+                    return (Result.Error("Variable no set"), remainingOps)
                 }
             }
         }
         
-        return (nil, ops)
+        return (Result.Error("Argument is missing"), ops)
     }
     
     private func evaluateSymbolically(ops: [Op]) -> (result: String, remainingOps: [Op], precedence: Int) {
