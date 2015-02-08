@@ -178,6 +178,7 @@ class CalculatorBrain: Printable {
     
     func clear() -> Double? {
         opStack = [Op]()
+        variableValues = [String:Double]()
         return evaluate()
     }
 }

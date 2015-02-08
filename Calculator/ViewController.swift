@@ -87,21 +87,34 @@ class ViewController: UIViewController {
         if (userIsInTheMiddleOfTypingANumber) {
             enter()
         }
+        
         compute(sender.currentTitle, withMethod: brain.performOperation)
     }
     
     func compute(operation: String!, withMethod: (String) -> Double?) {
         if let op = operation {
             displayValue = withMethod(op)
-            if displayValue != nil {
-                history.text = brain.description + "="
-            }
+            history.text = brain.description + "="
         }
     }
     
     @IBAction func clean(sender: AnyObject) {
         displayValue = brain.clear()
         history.text = brain.description
+    }
+    
+    @IBAction func putIntoMemory(sender: UIButton) {
+        brain.variableValues["M"] = displayValue
+        displayValue = brain.evaluate()
+        history.text = brain.description
+    }
+
+    @IBAction func pushM(sender: UIButton) {
+        if (userIsInTheMiddleOfTypingANumber) {
+            enter()
+        }
+        
+        compute("M", withMethod: brain.pushOperand)
     }
     
     var displayValue: Double? {
@@ -112,7 +125,7 @@ class ViewController: UIViewController {
             if let nv = newValue {
                 display.text = formatter.stringFromNumber(NSNumber(double: nv))
             } else {
-                display.text = "N/A"
+                display.text = ""
             }
             userIsInTheMiddleOfTypingANumber = false
         }
