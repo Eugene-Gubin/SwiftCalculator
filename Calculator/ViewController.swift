@@ -78,6 +78,7 @@ class ViewController: UIViewController {
         }
     }
     
+    // pi
     @IBAction func pushOperand(sender: UIButton) {
         if (userIsInTheMiddleOfTypingANumber) {
             enter()
@@ -97,7 +98,7 @@ class ViewController: UIViewController {
     func compute(operation: String!, withMethod: (String) -> Double?) {
         if let op = operation {
             displayValue = withMethod(op)
-            history.text = brain.description + "="
+            history.text = brain.description
         }
     }
     

@@ -46,6 +46,15 @@ class CalculatorBrain: Printable {
                 return varName
             }
         }
+        
+        var isExpresssion: Bool {
+            switch self {
+            case .Operand:
+                return false
+            default:
+                return true
+            }
+        }
     }
     
     private func unaryEvaluation(f: UnaryFunction, opCheck: (Double -> String?)? = nil) -> UnaryOperationImpl {
@@ -221,6 +230,23 @@ class CalculatorBrain: Printable {
         return ("?", ops, highestPrecedence)
     }
     
+    private func evaluateEntireStackSymbolically(ops: [Op]) -> [String] {
+        var result = [String]()
+        
+        var remainings = opStack
+        do {
+            let (expression, stack, _) = evaluateSymbolically(remainings)
+            remainings = stack
+            result.append(expression)
+        } while (!remainings.isEmpty)
+
+        return result
+    }
+    
+    private func isExpression(ops: [Op]) -> Bool {
+        return ops.last?.isExpresssion ?? false
+    }
+    
     func pushOperand(operand: Double) -> Double? {
         opStack.append(Op.Operand(operand))
         return evaluate()
@@ -244,14 +270,12 @@ class CalculatorBrain: Printable {
             return ""
         }
         
-        var expressions = [String]()
+        var expressions = evaluateEntireStackSymbolically(opStack)
+        var topChainIsExpression = isExpression(opStack)
         
-        var remainings = opStack
-        do {
-            let (expression, stack, _) = evaluateSymbolically(remainings)
-            remainings = stack
-            expressions.append(expression)
-        } while (!remainings.isEmpty)
+        if topChainIsExpression {
+            expressions[0] = expressions[0] + "="
+        }
         
         return ",".join(expressions.reverse())
     }
