@@ -21,6 +21,15 @@ class CalculatorBrain: Printable {
                 return "(\(msg))"
             }
         }
+        
+        func asValue() -> Double? {
+            switch self {
+            case .Value(let value):
+                return value
+            default:
+                return nil
+            }
+        }
     }
 
     private typealias UnaryOperationImpl = Result -> Result

@@ -42,7 +42,7 @@ class ViewController: UIViewController {
     
     @IBAction func inverseNumber(sender: UIButton) {
         if userIsInTheMiddleOfTypingANumber {
-            if let _ = displayValue {
+            if let _ = displayValue.asValue() {
                 invertDisplay()
             }
         } else {
@@ -60,8 +60,7 @@ class ViewController: UIViewController {
     
     @IBAction func enter() {
         userIsInTheMiddleOfTypingANumber = false
-        displayValue = brain.pushOperand(displayValue!)
-        history.text = brain.description
+        compute(displayValue.asValue(), brain.pushOperand)
     }
     
     @IBAction func backspace(sender: AnyObject) {
@@ -73,8 +72,7 @@ class ViewController: UIViewController {
                 userIsInTheMiddleOfTypingANumber = false
             }
         } else {
-            displayValue = brain.undo()
-            history.text = brain.description
+            performAction(brain.undo)
         }
     }
     
@@ -95,22 +93,13 @@ class ViewController: UIViewController {
         compute(sender.currentTitle, withMethod: brain.performOperation)
     }
     
-    func compute(operation: String!, withMethod: (String) -> Double?) {
-        if let op = operation {
-            displayValue = withMethod(op)
-            history.text = brain.description
-        }
-    }
-    
     @IBAction func clean(sender: AnyObject) {
-        displayValue = brain.clear()
-        history.text = brain.description
+        performAction(brain.clear)
     }
     
     @IBAction func putIntoMemory(sender: UIButton) {
-        brain.variableValues["M"] = displayValue
-        displayValue = brain.evaluate()
-        history.text = brain.description
+        brain.variableValues["M"] = displayValue.asValue()
+        performAction(brain.evaluate)
     }
 
     @IBAction func pushM(sender: UIButton) {
@@ -121,15 +110,35 @@ class ViewController: UIViewController {
         compute("M", withMethod: brain.pushOperand)
     }
     
-    var displayValue: Double? {
+    func performAction(action: () -> Double?) {
+        action()
+        displayValue = brain.evaluateAndReportErrors()
+        history.text = brain.description
+    }
+    
+    func compute<T>(operation: T?, withMethod: (T) -> Double?) {
+        if let op = operation {
+            withMethod(op)
+            displayValue = brain.evaluateAndReportErrors()
+            history.text = brain.description
+        }
+    }
+    
+    var displayValue: CalculatorBrain.Result {
         get {
-            return formatter.numberFromString(display.text!)?.doubleValue
+            let txt = display.text!
+            if let value = formatter.numberFromString(txt)?.doubleValue {
+                return .Value(value)
+            } else {
+                return .Error(txt)
+            }
         }
         set {
-            if let nv = newValue {
-                display.text = formatter.stringFromNumber(NSNumber(double: nv))
-            } else {
-                display.text = ""
+            switch newValue {
+            case .Value(let value):
+                display.text = formatter.stringFromNumber(NSNumber(double: value))
+            case .Error(let msg):
+                display.text = msg
             }
             userIsInTheMiddleOfTypingANumber = false
         }
